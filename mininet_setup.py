@@ -86,6 +86,9 @@ class Network:
         # Cyclone doesn't use a router, skip it
         sub = self.net.hosts[1]
         pub = self.net.hosts[2]
+        if static_discovery is True:
+            sub.cmd('export CYCLONEDDS_URI=file://$PWD/cyclone/cdds_static.xml')
+            pub.cmd('export CYCLONEDDS_URI=file://$PWD/cyclone/cdds_static.xml')
 
         print("Running subscriber")
         sub.sendCmd('cyclone/build/HelloworldSubscriber 21')
