@@ -17,7 +17,6 @@ class Network:
         #self.testCyclone()
 
         self.teardown()
-        return
 
         self.bringup()
 
@@ -30,10 +29,6 @@ class Network:
     def bringup(self):
         topo = Topo()
         switch = topo.addSwitch('s1')
-
-        #router = topo.addHost('router')
-        #router.setIP('10.1/24')
-        #topo.addLink(router, switch)
 
         for i in range(0, len(self.machines)):
             host = topo.addHost(f'{self.machines[i]}')
@@ -58,7 +53,22 @@ class Network:
         self.net.start()
         #self.net.pingAll()
 
-        #time.sleep(2)
+    def waitCompletion(self, ifconfig_report=True, debug_output=False):
+        for i, host in enumerate(self.net.hosts):
+            while host.waiting:
+                text = host.monitor(1000)
+                if debug_output:
+                    print(text)
+
+        for host in self.net.hosts:
+            host.sendCmd('ifconfig')
+
+        for i, host in enumerate(self.net.hosts):
+            while host.waiting:
+                text = host.monitor(1000)
+                if ifconfig_report:
+                    print(text)
+
 
     def testZenoh(self):
         # Run the router
@@ -70,29 +80,14 @@ class Network:
         sub = self.net.hosts[1]
         pub = self.net.hosts[2]
         print("Running subscriber")
-        sub.sendCmd('python3 zenoh/zenoh_processes.py --role sub')
+        sub.sendCmd('python3 zenoh/zenoh_processes.py -d 21 --role sub')
         time.sleep(0.5)
         print("Running publisher")
-        pub.sendCmd('python3 zenoh/zenoh_processes.py --role pub')
+        pub.sendCmd('python3 zenoh/zenoh_processes.py -d 20 --role pub')
 
-        for i, host in enumerate(self.net.hosts):
-            while host.waiting:
-                # print(f'about to monitor host {host.name}')
-                text = host.monitor(1000)
-                #outputs[i] += text
-                #print(text)
+        self.waitCompletion()
 
-        for host in self.net.hosts:
-            host.sendCmd('ifconfig')
-
-        for i, host in enumerate(self.net.hosts):
-            while host.waiting:
-                # print(f'about to monitor host {host.name}')
-                text = host.monitor(1000)
-                #outputs[i] += text
-                print(text)
-
-        # Kill the docker
+        # Kill the router
         print("Killing router")
         router.cmd('killall -9 zenohd')
 
@@ -103,27 +98,12 @@ class Network:
         pub = self.net.hosts[2]
 
         print("Running subscriber")
-        sub.sendCmd('cyclone/build/HelloworldSubscriber 11')
+        sub.sendCmd('cyclone/build/HelloworldSubscriber 21')
         time.sleep(0.5)
         print("Running publisher")
-        pub.sendCmd('cyclone/build/HelloworldPublisher 10')
+        pub.sendCmd('cyclone/build/HelloworldPublisher 20')
 
-        for i, host in enumerate(self.net.hosts):
-            while host.waiting:
-                # print(f'about to monitor host {host.name}')
-                text = host.monitor(1000)
-                #outputs[i] += text
-                #print(text)
-
-        for host in self.net.hosts:
-            host.sendCmd('ifconfig')
-
-        for i, host in enumerate(self.net.hosts):
-            while host.waiting:
-                # print(f'about to monitor host {host.name}')
-                text = host.monitor(1000)
-                #outputs[i] += text
-                print(text)
+        self.waitCompletion()
 
 
     def teardown(self):

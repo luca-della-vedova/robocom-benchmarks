@@ -69,13 +69,19 @@ if __name__ == "__main__":
             help='Role of the node, publisher or subscriber',
             choices = ['pub', 'sub'])
 
+    parser.add_argument('-d',
+            dest='duration',
+            type=int,
+            required=True,
+            help='Duration of the runtime (in seconds), for publishers publish at 1 Hz')
+
     args = parser.parse_args()
     if args.role == 'pub':
         pub = ZenohPublisher()
         # Publish some stuff
-        for i in range(10):
+        for i in range(args.duration):
             pub.publish(HeartbeatPacket.tobytes())
             time.sleep(1)
     elif args.role == 'sub':
         sub = ZenohSubscriber()
-        time.sleep(11)
+        time.sleep(args.duration)
