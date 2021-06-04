@@ -1,3 +1,4 @@
+import argparse
 import time
 import numpy as np
 
@@ -8,23 +9,8 @@ from mininet.util import dumpNodeConnections
 class Network:
 
     def __init__(self):
-        print("hello world")
         self.machines = ['0_router', '1_sub', '2_pub']
         self.bringup()
-
-        input("Press enter to start zenoh test")
-        self.testZenoh()
-        #self.testCyclone()
-
-        self.teardown()
-
-        self.bringup()
-
-        input("Press enter to start cyclone test")
-        self.testCyclone()
-
-        self.teardown()
-
 
     def bringup(self):
         topo = Topo()
@@ -71,6 +57,7 @@ class Network:
 
 
     def testZenoh(self):
+        input("Press enter to start zenoh test")
         # Run the router
         router = self.net.hosts[0]
         router.cmd('zenohd &')
@@ -90,9 +77,12 @@ class Network:
         # Kill the router
         print("Killing router")
         router.cmd('killall -9 zenohd')
+        self.teardown()
 
 
-    def testCyclone(self):
+    def testCyclone(self, static_discovery=False):
+        input("Press enter to start cyclone test")
+
         # Cyclone doesn't use a router, skip it
         sub = self.net.hosts[1]
         pub = self.net.hosts[2]
@@ -104,10 +94,30 @@ class Network:
         pub.sendCmd('cyclone/build/HelloworldPublisher 20')
 
         self.waitCompletion()
-
+        self.teardown()
 
     def teardown(self):
         self.net.stop()
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m',
+            dest='middleware',
+            type=str,
+            required=True,
+            help='Middleware to test',
+            choices = ['cdds', 'zenoh'])
+
+    parser.add_argument('--static',
+            dest='static',
+            type=bool,
+            default=False,
+            help='Whether to perform static discovery for DDS')
+
+    args = parser.parse_args()
     net = Network()
+    if args.middleware == 'cdds':
+        net.testCyclone(args.static)
+    if args.middleware == 'zenoh':
+        # No static configuration for Zenoh
+        net.testZenoh()
