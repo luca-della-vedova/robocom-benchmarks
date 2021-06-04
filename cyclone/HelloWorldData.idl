@@ -1,0 +1,8 @@
+module HelloWorldData
+{
+  struct Msg
+  {
+    uint8 userID[128];
+  };
+  #pragma keylist Msg userID
+};
