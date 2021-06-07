@@ -37,3 +37,7 @@ mosquitto_passwd -c passwords user
 ```
 mosquitto -v -c with_security.conf
 ```
+# run the broker
+```
+mosquitto -v
+```
