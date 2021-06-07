@@ -12,3 +12,4 @@ The setup is based on mininet, you will need:
 * [Cyclonedds](https://github.com/eclipse-cyclonedds/cyclonedds), built from source
 * [Zenoh](https://zenoh.io/), deb version works fine.
 * venv was used to install cyclone and dependencies locally.
+* [Mosquitto MQTT](https://mosquitto.org/) version 2.0.10 installed via [PPA](https://launchpad.net/~mosquitto-dev/+archive/ubuntu/mosquitto-ppa)
