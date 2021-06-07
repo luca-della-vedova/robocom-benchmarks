@@ -56,21 +56,24 @@ class Network:
                     print(text)
 
 
-    def testZenoh(self):
+    def testZenoh(self, enable_security=False):
         input("Press enter to start zenoh test")
         # Run the router
         router = self.net.hosts[0]
-        router.cmd('zenohd &')
+        if enable_security:
+            router.sendCmd('zenohd -c zenoh/server_config.cfg -l tls/0.0.0.0:7447 &')
+        else:
+            router.sendCmd('zenohd &')
         time.sleep(1)
         # Now setup the publisher and subscriber
         # For now only one each
         sub = self.net.hosts[1]
         pub = self.net.hosts[2]
         print("Running subscriber")
-        sub.sendCmd('python3 zenoh/zenoh_processes.py -d 21 --role sub')
+        sub.sendCmd(f'python3 zenoh/zenoh_processes.py -d 21 --role sub --secure {enable_security}')
         time.sleep(0.5)
         print("Running publisher")
-        pub.sendCmd('python3 zenoh/zenoh_processes.py -d 20 --role pub')
+        pub.sendCmd('python3 zenoh/zenoh_processes.py -d 20 --role pub --secure {enable_security}')
 
         self.waitCompletion()
 
@@ -80,7 +83,7 @@ class Network:
         self.teardown()
 
 
-    def testCyclone(self, static_discovery=False):
+    def testCyclone(self, enable_security=False, static_discovery=False):
         input("Press enter to start cyclone test")
 
         # Cyclone doesn't use a router, skip it
@@ -117,10 +120,16 @@ if __name__ == '__main__':
             default=False,
             help='Whether to perform static discovery for DDS')
 
+    parser.add_argument('--secure',
+            dest='security',
+            type=bool,
+            default=False,
+            help='Whether to enable security (TLS tunneling)')
+
     args = parser.parse_args()
     net = Network()
     if args.middleware == 'cdds':
-        net.testCyclone(args.static)
+        net.testCyclone(enable_security=args.security, static_discovery=args.static)
     if args.middleware == 'zenoh':
-        # No static configuration for Zenoh
-        net.testZenoh()
+        # No static discovery configuration for Zenoh
+        net.testZenoh(enable_security=args.security)

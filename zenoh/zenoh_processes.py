@@ -14,12 +14,17 @@ TaskPacket = np.array([0] * 4096, dtype=np.uint8)
 
 class ZenohNode:
 
-    def __init__(self):
+    def __init__(self, security):
         conf = {}
         # Docker router nodes client setup
         resource = '/zenoh/benchmark/topic'
         conf["peer"] = 'tcp/10.0.0.1:7447'
         conf["mode"] = 'client'
+        if security is True:
+            conf["user"] = 'username'
+            conf["password"] = '1234567890'
+            conf["tls_root_ca_certificate"] = 'zenoh/tls/minica.pem'
+            conf["peer"] = 'tls/10.0.0.1:7447'
 
         print("Declaring session")
         self.session = zenoh.net.open(conf)
@@ -32,8 +37,8 @@ class ZenohNode:
 
 class ZenohPublisher(ZenohNode):
 
-    def __init__(self):
-        ZenohNode.__init__(self)
+    def __init__(self, security=False):
+        ZenohNode.__init__(self, security)
         print("Declaring publisher")
         self.publisher = self.session.declare_publisher(self.rid)
 
@@ -48,8 +53,8 @@ class ZenohPublisher(ZenohNode):
 
 class ZenohSubscriber(ZenohNode):
 
-    def __init__(self):
-        ZenohNode.__init__(self)
+    def __init__(self, security=False):
+        ZenohNode.__init__(self, security)
         print("Declaring subscriber")
         sub_info = SubInfo(Reliability.Reliable, SubMode.Push)
         self.subscriber = self.session.declare_subscriber(self.rid, sub_info, self.callback)
@@ -69,6 +74,13 @@ if __name__ == "__main__":
             help='Role of the node, publisher or subscriber',
             choices = ['pub', 'sub'])
 
+    parser.add_argument('--secure',
+            dest='secure',
+            type=bool,
+            default=False,
+            help='Whether to enable security (TLS tunneling with username / password authentication)',
+            )
+
     parser.add_argument('-d',
             dest='duration',
             type=int,
@@ -77,11 +89,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.role == 'pub':
-        pub = ZenohPublisher()
+        pub = ZenohPublisher(security=args.secure)
         # Publish some stuff
         for i in range(args.duration):
             pub.publish(HeartbeatPacket.tobytes())
             time.sleep(1)
     elif args.role == 'sub':
-        sub = ZenohSubscriber()
+        sub = ZenohSubscriber(security=args.secure)
         time.sleep(args.duration)
